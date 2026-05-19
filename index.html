@@ -1,0 +1,829 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+<title>LUMINA · Gemini 2.5 Flash · Light/Dark</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600&display=swap" rel="stylesheet">
+
+<style>
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  body {
+    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    height: 100vh;
+    overflow: hidden;
+    transition: background-color 0.25s ease, color 0.2s ease;
+  }
+
+  /* ===== DARK THEME (default) ===== */
+  :root {
+    --bg-gradient-start: #0a1210;
+    --bg-gradient-end: #030605;
+    --header-bg: rgba(3, 6, 5, 0.92);
+    --border-color: rgba(16, 185, 129, 0.5);
+    --bubble-bot-bg: #0e1412;
+    --bubble-bot-border: #1a3a2f;
+    --bubble-user-bg: #0b2a1f;
+    --bubble-user-border: #10b981;
+    --text-primary: #edf7f2;
+    --text-secondary: #618d7c;
+    --input-bg: #0a100e;
+    --input-border: #1a4538;
+    --placeholder: #557c6b;
+    --menu-bg: rgba(8, 15, 12, 0.98);
+    --overlay-bg: rgba(0,0,0,0.6);
+    --icon-fill: #34d399;
+    --brand-bg: rgba(16,185,129,0.1);
+    --brand-color: #b6f0df;
+    --send-btn-gradient-start: #0f2b21;
+    --send-btn-gradient-end: #0a221a;
+  }
+
+  body.light {
+    --bg-gradient-start: #eef5f2;
+    --bg-gradient-end: #e0ece8;
+    --header-bg: rgba(255, 255, 255, 0.92);
+    --border-color: #10b981;
+    --bubble-bot-bg: #ffffff;
+    --bubble-bot-border: #cde3dc;
+    --bubble-user-bg: #e5f5ef;
+    --bubble-user-border: #10b981;
+    --text-primary: #1a2f28;
+    --text-secondary: #4f7b6a;
+    --input-bg: #ffffff;
+    --input-border: #cde0d9;
+    --placeholder: #92b3a4;
+    --menu-bg: rgba(245, 250, 248, 0.98);
+    --overlay-bg: rgba(0,0,0,0.3);
+    --icon-fill: #0c6b4f;
+    --brand-bg: rgba(16,185,129,0.15);
+    --brand-color: #0b5e45;
+    --send-btn-gradient-start: #e0f0ea;
+    --send-btn-gradient-end: #c8e2d9;
+  }
+
+  /* main app structure */
+  .app {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    background: radial-gradient(circle at 20% 10%, var(--bg-gradient-start) 0%, var(--bg-gradient-end) 100%);
+    position: relative;
+    transition: background 0.2s ease;
+  }
+
+  /* ========= LANDING SCREEN ========= */
+  .landing {
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(circle at 70% 30%, #091a14, #020504);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+    backdrop-filter: blur(2px);
+    transition: opacity 0.6s cubic-bezier(0.2, 0.9, 0.4, 1.1), visibility 0.3s;
+  }
+  body.light .landing {
+    background: radial-gradient(circle at 70% 30%, #d9f0e8, #c2e0d6);
+  }
+  .landing.hidden {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+  }
+  .landing-card {
+    text-align: center;
+    animation: fadeGlow 1s ease;
+  }
+  .landing h1 {
+    font-size: clamp(2.8rem, 10vw, 5.8rem);
+    font-weight: 500;
+    letter-spacing: 10px;
+    background: linear-gradient(125deg, #e6f4ef, #10b981, #34d399, #6ee7b7);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-shadow: 0 0 18px rgba(16,185,129,0.3);
+  }
+  .landing p {
+    color: #6b9f8e;
+    letter-spacing: 3px;
+    margin-top: 10px;
+    font-size: 0.85rem;
+  }
+  body.light .landing p {
+    color: #2b6b54;
+  }
+  .enter-btn {
+    margin-top: 2rem;
+    padding: 0.8rem 2.3rem;
+    background: transparent;
+    border: 1.8px solid #10b981;
+    color: #d1f0e6;
+    font-weight: 500;
+    border-radius: 60px;
+    cursor: pointer;
+    transition: 0.25s;
+    backdrop-filter: blur(4px);
+    font-size: 0.9rem;
+    letter-spacing: 1px;
+  }
+  body.light .enter-btn {
+    color: #0f5e48;
+  }
+  .enter-btn:hover {
+    background: rgba(16,185,129,0.12);
+    box-shadow: 0 0 20px rgba(16,185,129,0.3);
+    border-color: #34d399;
+  }
+  @keyframes fadeGlow {
+    0% { opacity: 0; transform: scale(0.98);}
+    100% { opacity: 1; transform: scale(1);}
+  }
+
+  /* ========= CHAT INTERFACE ========= */
+  .chat-interface {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    width: 100%;
+  }
+
+  /* header — compact with theme button + small hamburger */
+  .chat-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.7rem 1.5rem;
+    background: var(--header-bg);
+    backdrop-filter: blur(8px);
+    border-bottom: 1.5px solid var(--border-color);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    position: relative;
+    z-index: 15;
+  }
+  .brand small {
+    color: var(--brand-color);
+    font-weight: 400;
+    letter-spacing: 3px;
+    font-size: 0.75rem;
+    background: var(--brand-bg);
+    padding: 4px 12px;
+    border-radius: 40px;
+    backdrop-filter: blur(2px);
+  }
+  /* Right side group: theme button + menu icon */
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  /* Theme toggle button - direct left of 3 lines */
+  .theme-toggle {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(16, 185, 129, 0.08);
+    border: 1px solid rgba(16,185,129,0.3);
+    border-radius: 30px;
+    cursor: pointer;
+    transition: 0.2s;
+  }
+  .theme-toggle:hover {
+    background: rgba(16,185,129,0.2);
+    border-color: #34d399;
+    transform: scale(0.96);
+  }
+  .theme-toggle svg {
+    width: 18px;
+    height: 18px;
+    fill: #c6f7e8;
+    transition: fill 0.2s;
+  }
+  body.light .theme-toggle svg {
+    fill: #1f5c49;
+  }
+  /* SMALL HAMBURGER */
+  .menu-icon {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 5px;
+    cursor: pointer;
+    background: rgba(16, 185, 129, 0.08);
+    border-radius: 12px;
+    transition: all 0.2s ease;
+    padding: 6px 8px;
+    border: 1px solid rgba(16,185,129,0.3);
+  }
+  .menu-icon:hover {
+    background: rgba(16,185,129,0.2);
+    border-color: #34d399;
+  }
+  .menu-icon span {
+    display: block;
+    width: 18px;
+    height: 2px;
+    background: #c6f7e8;
+    border-radius: 4px;
+    transition: 0.2s;
+  }
+  body.light .menu-icon span {
+    background: #1f5c49;
+  }
+  .menu-icon span:nth-child(1) { width: 20px; }
+  .menu-icon span:nth-child(2) { width: 14px; }
+  .menu-icon span:nth-child(3) { width: 20px; }
+
+  /* SIDE MENU */
+  .side-menu {
+    position: fixed;
+    top: 0;
+    right: -320px;
+    width: 280px;
+    height: 100vh;
+    background: var(--menu-bg);
+    backdrop-filter: blur(20px);
+    border-left: 1.5px solid #10b981;
+    box-shadow: -8px 0 35px rgba(0,0,0,0.3);
+    z-index: 300;
+    transition: right 0.3s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+    display: flex;
+    flex-direction: column;
+    padding: 1.8rem 1.2rem;
+    gap: 1.8rem;
+  }
+  .side-menu.open {
+    right: 0;
+  }
+  .menu-overlay {
+    position: fixed;
+    inset: 0;
+    background: var(--overlay-bg);
+    backdrop-filter: blur(3px);
+    z-index: 250;
+    opacity: 0;
+    visibility: hidden;
+    transition: 0.2s;
+    cursor: pointer;
+  }
+  .menu-overlay.active {
+    opacity: 1;
+    visibility: visible;
+  }
+  .menu-header h3 {
+    color: var(--text-primary);
+    font-weight: 500;
+    font-size: 1.2rem;
+    letter-spacing: 1px;
+  }
+  .menu-header p {
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+    margin-top: 6px;
+  }
+  .menu-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 12px 14px;
+    background: rgba(16, 185, 129, 0.05);
+    border: 1px solid rgba(16,185,129,0.2);
+    border-radius: 18px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-bottom: 12px;
+  }
+  .menu-item:hover {
+    background: rgba(16, 185, 129, 0.15);
+    border-color: #10b981;
+    transform: translateX(-4px);
+  }
+  .menu-icon-svg {
+    width: 24px;
+    height: 24px;
+    fill: var(--icon-fill);
+  }
+  .menu-item span {
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: var(--text-primary);
+  }
+  .menu-footer {
+    margin-top: auto;
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+    text-align: center;
+    padding-top: 2rem;
+    border-top: 1px solid rgba(16,185,129,0.2);
+  }
+
+  /* chat messages area */
+  .chat-container {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1.2rem 1.2rem 1rem 1.2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem;
+    scroll-behavior: smooth;
+  }
+
+  .message {
+    display: flex;
+    flex-direction: column;
+    max-width: 80%;
+    animation: fadeSlideUp 0.25s ease-out;
+  }
+  .message.user {
+    align-self: flex-end;
+  }
+  .message.bot {
+    align-self: flex-start;
+  }
+
+  .bubble {
+    padding: 0.8rem 1.2rem;
+    border-radius: 22px;
+    background: var(--bubble-bot-bg);
+    border: 1px solid var(--bubble-bot-border);
+    color: var(--text-primary);
+    font-size: 0.95rem;
+    line-height: 1.5;
+    font-weight: 400;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+    white-space: pre-wrap;
+    word-wrap: break-word;
+  }
+  .bubble a {
+    color: #10b981;
+    text-decoration: none;
+  }
+  .bubble code {
+    background: rgba(0,0,0,0.2);
+    padding: 2px 4px;
+    border-radius: 4px;
+    font-family: monospace;
+  }
+  .user .bubble {
+    background: var(--bubble-user-bg);
+    border: 1px solid var(--bubble-user-border);
+    border-bottom-right-radius: 6px;
+  }
+  .bot .bubble {
+    border-bottom-left-radius: 6px;
+  }
+  .timestamp {
+    font-size: 0.65rem;
+    color: var(--text-secondary);
+    margin-top: 5px;
+    margin-left: 8px;
+  }
+  .user .timestamp {
+    text-align: right;
+    margin-right: 6px;
+  }
+
+  /* INPUT AREA */
+  .input-area {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0.9rem 1.5rem 1.1rem 1.5rem;
+    background: var(--header-bg);
+    backdrop-filter: blur(12px);
+    border-top: 1px solid var(--border-color);
+    box-shadow: 0 -4px 20px rgba(0,0,0,0.05);
+  }
+  .input-wrapper {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    background: var(--input-bg);
+    border: 1.5px solid var(--input-border);
+    border-radius: 40px;
+    transition: all 0.2s;
+    padding: 0.1rem 0.2rem 0.1rem 1rem;
+  }
+  .input-wrapper:focus-within {
+    border-color: #10b981;
+    box-shadow: 0 0 0 2px rgba(16,185,129,0.2);
+  }
+  .input-wrapper input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: var(--text-primary);
+    font-size: 0.9rem;
+    padding: 0.75rem 0.4rem;
+    outline: none;
+  }
+  .input-wrapper input::placeholder {
+    color: var(--placeholder);
+  }
+  .send-btn {
+    width: 44px;
+    height: 44px;
+    border-radius: 44px;
+    background: linear-gradient(145deg, var(--send-btn-gradient-start), var(--send-btn-gradient-end));
+    border: 1.2px solid #10b981;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: 0.2s;
+    box-shadow: 0 1px 5px rgba(0,0,0,0.1);
+  }
+  .send-btn:hover:not(:disabled) {
+    background: #10b981;
+    transform: scale(0.96);
+  }
+  .send-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+  .send-btn svg {
+    width: 18px;
+    height: 18px;
+    fill: #caf5e8;
+  }
+  body.light .send-btn svg {
+    fill: #1f5c49;
+  }
+  .send-btn:hover:not(:disabled) svg {
+    fill: #010101;
+  }
+
+  /* scrollbar */
+  .chat-container::-webkit-scrollbar {
+    width: 5px;
+  }
+  .chat-container::-webkit-scrollbar-track {
+    background: #07120e;
+  }
+  body.light .chat-container::-webkit-scrollbar-track {
+    background: #cfdfd8;
+  }
+  .chat-container::-webkit-scrollbar-thumb {
+    background: #1f6e55;
+    border-radius: 20px;
+  }
+
+  @keyframes fadeSlideUp {
+    from { opacity: 0; transform: translateY(12px);}
+    to { opacity: 1; transform: translateY(0);}
+  }
+
+  @media (max-width: 680px) {
+    .message { max-width: 92%; }
+    .input-area { padding: 0.7rem 1rem; }
+    .brand small { font-size: 0.65rem; letter-spacing: 2px; }
+    .chat-container { padding: 1rem 1rem; }
+    .side-menu { width: 260px; }
+  }
+
+  .typing-indicator {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+    padding: 0.5rem 1rem;
+  }
+  .typing-dot {
+    width: 6px;
+    height: 6px;
+    background: #10b981;
+    border-radius: 50%;
+    animation: pulse 1.2s infinite ease;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 0.3; transform: translateY(0);}
+    50% { opacity: 1; transform: translateY(-2px);}
+  }
+
+  .error-message {
+    color: #ef4444;
+    border-color: #ef4444 !important;
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <!-- Landing overlay -->
+  <div class="landing" id="landing">
+    <div class="landing-card">
+      <h1>LUMINA</h1>
+      <p>DARK EMERALD · GEMINI 2.5 FLASH</p>
+      <button class="enter-btn" id="enterBtn">ENTER</button>
+    </div>
+  </div>
+
+  <!-- main chat panel -->
+  <div class="chat-interface">
+    <div class="chat-header">
+      <div class="brand"><small>✦ LUMINA / GEMINI 2.5 FLASH</small></div>
+      <div class="header-actions">
+        <div class="theme-toggle" id="themeToggleBtn">
+          <svg viewBox="0 0 24 24" width="18" height="18">
+            <path d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9-4.03-9-9-9zm0 16c-3.86 0-7-3.14-7-7s3.14-7 7-7 7 3.14 7 7-3.14 7-7 7z"/>
+            <path d="M12 7v10c2.76 0 5-2.24 5-5s-2.24-5-5-5z"/>
+          </svg>
+        </div>
+        <div class="menu-icon" id="menuBtn">
+          <span></span><span></span><span></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="chat-container" id="chatContainer">
+      <div class="message bot">
+        <div class="bubble">
+          ✨ Welcome to <strong>Lumina</strong> powered by <strong>Gemini 2.5 Flash</strong>.<br>
+          Ask me anything — I'm fast, intelligent, and ready to help!
+        </div>
+        <div class="timestamp">now</div>
+      </div>
+    </div>
+
+    <div class="input-area">
+      <div class="input-wrapper">
+        <input type="text" id="chatInput" placeholder="Message Lumina (Gemini 2.5 Flash)..." autocomplete="off">
+      </div>
+      <button class="send-btn" id="sendBtn">
+        <svg viewBox="0 0 24 24"><path d="M2 21L22 12L2 3V10L16 12L2 14V21Z"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Overlay + Side Menu -->
+  <div class="menu-overlay" id="menuOverlay"></div>
+  <div class="side-menu" id="sideMenu">
+    <div class="menu-header">
+      <h3>⚡ LUMINA MENU</h3>
+      <p>powered by <strong>Gemini 2.5 Flash</strong></p>
+    </div>
+    <div class="menu-item" id="geminiMenuItem">
+      <svg class="menu-icon-svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+      <span>About Gemini 2.5 Flash</span>
+    </div>
+    <div class="menu-item" id="resetMenuItem">
+      <svg class="menu-icon-svg" viewBox="0 0 24 24" fill="currentColor"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
+      <span>Reset conversation</span>
+    </div>
+    <div class="menu-item" id="aboutMenuItem">
+      <svg class="menu-icon-svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+      <span>About Lumina</span>
+    </div>
+    <div class="menu-footer">✦ Gemini 2.5 Flash Edition ✦</div>
+  </div>
+</div>
+
+<script>
+  // DOM Elements
+  const landingDiv = document.getElementById('landing');
+  const enterButton = document.getElementById('enterBtn');
+  const chatContainer = document.getElementById('chatContainer');
+  const inputField = document.getElementById('chatInput');
+  const sendButton = document.getElementById('sendBtn');
+  const menuBtn = document.getElementById('menuBtn');
+  const sideMenu = document.getElementById('sideMenu');
+  const menuOverlay = document.getElementById('menuOverlay');
+  const themeToggle = document.getElementById('themeToggleBtn');
+  
+  const geminiItem = document.getElementById('geminiMenuItem');
+  const resetItem = document.getElementById('resetMenuItem');
+  const aboutItem = document.getElementById('aboutMenuItem');
+
+  // Conversation history for context
+  let conversationHistory = [];
+
+  // API Configuration
+  const API_URL = window.location.origin + '/api/chat';
+
+  // Light theme state
+  function setTheme(theme) {
+    if (theme === 'light') {
+      document.body.classList.add('light');
+      localStorage.setItem('lumina_theme', 'light');
+    } else {
+      document.body.classList.remove('light');
+      localStorage.setItem('lumina_theme', 'dark');
+    }
+  }
+  function toggleTheme() {
+    if (document.body.classList.contains('light')) {
+      setTheme('dark');
+    } else {
+      setTheme('light');
+    }
+  }
+  
+  const savedTheme = localStorage.getItem('lumina_theme');
+  if (savedTheme === 'light') setTheme('light');
+  else setTheme('dark');
+  themeToggle.addEventListener('click', toggleTheme);
+
+  // helpers
+  function scrollToBottom() {
+    if (chatContainer) chatContainer.scrollTop = chatContainer.scrollHeight;
+  }
+  
+  function getCurrentTimestamp() {
+    const now = new Date();
+    return now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  }
+  
+  function formatMarkdown(text) {
+    // Simple markdown formatting for better display
+    let formatted = text
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*(.*?)\*/g, '<em>$1</em>')
+      .replace(/`(.*?)`/g, '<code>$1</code>')
+      .replace(/\n/g, '<br>');
+    return formatted;
+  }
+  
+  function addMessage(content, type, isHtml = false) {
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `message ${type}`;
+    const bubbleDiv = document.createElement('div');
+    bubbleDiv.className = 'bubble';
+    if (isHtml) {
+      bubbleDiv.innerHTML = content;
+    } else {
+      bubbleDiv.innerText = content;
+    }
+    const timeSpan = document.createElement('div');
+    timeSpan.className = 'timestamp';
+    timeSpan.innerText = getCurrentTimestamp();
+    messageDiv.appendChild(bubbleDiv);
+    messageDiv.appendChild(timeSpan);
+    chatContainer.appendChild(messageDiv);
+    scrollToBottom();
+    return messageDiv;
+  }
+
+  async function sendToGemini(userMessage) {
+    try {
+      const response = await fetch(API_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          message: userMessage,
+          history: conversationHistory
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      
+      if (data.error) {
+        throw new Error(data.response || 'Unknown error occurred');
+      }
+      
+      // Store in conversation history
+      conversationHistory.push({
+        user: userMessage,
+        bot: data.response
+      });
+      
+      // Keep only last 20 exchanges to avoid context overflow
+      if (conversationHistory.length > 20) {
+        conversationHistory = conversationHistory.slice(-20);
+      }
+      
+      return data.response;
+    } catch (error) {
+      console.error('API Error:', error);
+      return `❌ **Error connecting to Gemini API**\n\n${error.message}\n\nMake sure your server is running and GEMINI_API_KEY is set correctly in .env`;
+    }
+  }
+
+  function resetConversation() {
+    // Clear chat container except first welcome message
+    while (chatContainer.children.length > 1) {
+      chatContainer.removeChild(chatContainer.lastChild);
+    }
+    // Reset conversation history
+    conversationHistory = [];
+    
+    const welcomeMsg = chatContainer.children[0];
+    if (welcomeMsg && welcomeMsg.classList?.contains('message')) {
+      const timeSpan = welcomeMsg.querySelector('.timestamp');
+      if (timeSpan) timeSpan.innerText = getCurrentTimestamp();
+    }
+    addMessage("✨ Conversation reset. I'm ready to chat again!", "bot");
+    scrollToBottom();
+  }
+
+  // Side menu functions
+  function openMenu() { sideMenu.classList.add('open'); menuOverlay.classList.add('active'); }
+  function closeMenu() { sideMenu.classList.remove('open'); menuOverlay.classList.remove('active'); }
+  
+  menuBtn.addEventListener('click', (e) => { e.stopPropagation(); openMenu(); });
+  menuOverlay.addEventListener('click', closeMenu);
+  
+  geminiItem.addEventListener('click', () => { 
+    addMessage("**Gemini 2.5 Flash** is Google's latest fast, efficient LLM. It offers:\n\n• High-speed responses\n• Strong reasoning capabilities\n• Multimodal understanding (images coming soon)\n• 1M token context window\n\nI'm fully integrated with it!", "bot", true); 
+    closeMenu(); 
+  });
+  
+  resetItem.addEventListener('click', () => { resetConversation(); closeMenu(); });
+  
+  aboutItem.addEventListener('click', () => { 
+    addMessage("**Lumina Dark Emerald** — A sleek AI chat interface powered by Google's **Gemini 2.5 Flash**.\n\n✨ Features:\n• Light/Dark theme toggle\n• Real-time streaming responses\n• Conversation memory\n• Clean emerald aesthetic\n\nBuilt with Node.js, Express, and Google Generative AI.", "bot", true); 
+    closeMenu(); 
+  });
+
+  // send message logic with real API
+  let isSending = false;
+  
+  async function sendUserMessage() {
+    if (isSending) return;
+    const rawText = inputField.value.trim();
+    if (!rawText) return;
+    
+    isSending = true;
+    sendButton.disabled = true;
+    
+    // Add user message
+    addMessage(rawText, 'user');
+    inputField.value = '';
+    inputField.focus();
+    
+    // Show typing indicator
+    const typingDiv = document.createElement('div');
+    typingDiv.className = 'message bot';
+    typingDiv.innerHTML = `<div class="bubble typing-indicator"><span class="typing-dot"></span><span class="typing-dot" style="animation-delay:0.2s"></span><span class="typing-dot" style="animation-delay:0.4s"></span></div>`;
+    chatContainer.appendChild(typingDiv);
+    scrollToBottom();
+    
+    try {
+      // Call Gemini API
+      const botResponse = await sendToGemini(rawText);
+      
+      // Remove typing indicator
+      if (typingDiv.parentNode) typingDiv.remove();
+      
+      // Add bot response with markdown formatting
+      addMessage(formatMarkdown(botResponse), 'bot', true);
+    } catch (error) {
+      if (typingDiv.parentNode) typingDiv.remove();
+      addMessage(`❌ Error: ${error.message}`, 'bot');
+    } finally {
+      isSending = false;
+      sendButton.disabled = false;
+      inputField.focus();
+    }
+  }
+  
+  sendButton.addEventListener('click', sendUserMessage);
+  inputField.addEventListener('keypress', (e) => { 
+    if (e.key === 'Enter' && !isSending) { 
+      e.preventDefault(); 
+      sendUserMessage(); 
+    } 
+  });
+
+  function enterChat() { 
+    landingDiv.classList.add('hidden'); 
+    setTimeout(() => inputField.focus(), 400); 
+  }
+  
+  enterButton.addEventListener('click', enterChat);
+  
+  const observer = new MutationObserver(() => scrollToBottom());
+  observer.observe(chatContainer, { childList: true, subtree: false });
+  
+  window.addEventListener('load', () => { 
+    scrollToBottom(); 
+    if (landingDiv.classList.contains('hidden')) inputField.focus();
+    
+    // Test API connection on load
+    fetch('/api/health')
+      .then(res => res.json())
+      .then(data => console.log('✅ Server connected:', data))
+      .catch(err => console.warn('⚠️ Server not reachable:', err));
+  });
+  
+  document.body.style.margin = '0';
+</script>
+</body>
+</html>
