@@ -1,9 +1,9 @@
-🤖 Lumina Chatbot
+# 🤖 Lumina Chatbot
 
 A modern AI-powered chatbot built with Node.js, Express, and Google Gemini API.
 Lumina provides fast, intelligent, and responsive conversations with a sleek UI and real-time AI interaction.
 
-🚀 Features
+# 🚀 Features
 AI-powered chat using Gemini API
 Modern responsive UI
 Real-time messaging
